@@ -1,6 +1,7 @@
+using AspireAppTest.ApiService.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace AspireAppTest.ApiService;
+namespace AspireAppTest.ApiService.Data;
 
 public class LibraryDbContext : DbContext
 {

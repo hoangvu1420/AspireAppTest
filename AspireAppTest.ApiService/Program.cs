@@ -1,5 +1,6 @@
-using AspireAppTest.ApiService;
-using Microsoft.EntityFrameworkCore;
+using AspireAppTest.ApiService.Data;
+using AspireAppTest.ApiService.Endpoints;
+using AspireAppTest.ApiService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,7 +12,10 @@ builder.Services.AddProblemDetails();
 
 builder.AddNpgsqlDbContext<LibraryDbContext>("LMS");
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.AddRedisDistributedCache("cache");
+
+builder.Services.AddScoped<IBookService, BookService>();
+
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
@@ -23,6 +27,8 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+app.MapBookEndpoints();
 
 app.MapDefaultEndpoints();
 

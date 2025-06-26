@@ -3,7 +3,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace AspireAppTest.ApiService.Migrations
+namespace AspireAppTest.ApiService.Data.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration

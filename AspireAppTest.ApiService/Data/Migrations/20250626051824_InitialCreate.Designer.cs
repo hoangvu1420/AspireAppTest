@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace AspireAppTest.ApiService.Migrations
+namespace AspireAppTest.ApiService.Data.Migrations
 {
     [DbContext(typeof(LibraryDbContext))]
     [Migration("20250626051824_InitialCreate")]

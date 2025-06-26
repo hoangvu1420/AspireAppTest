@@ -1,4 +1,4 @@
-namespace AspireAppTest.ApiService;
+namespace AspireAppTest.ApiService.Models;
 
 public class Book
 {
