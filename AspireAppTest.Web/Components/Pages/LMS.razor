@@ -1,0 +1,100 @@
+@page "/lms"
+@using AspireAppTest.Web.Models
+@inject HttpClient Http
+
+<h3>Library Management System</h3>
+
+@if (books == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Publication Year</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var book in books)
+            {
+                <tr>
+                    <td>@book.Title</td>
+                    <td>@book.Author</td>
+                    <td>@book.PublicationYear</td>
+                    <td>
+                        <button class="btn btn-primary" @onclick="() => EditBook(book)">Edit</button>
+                        <button class="btn btn-danger" @onclick="() => DeleteBook(book.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<h4>Add/Edit Book</h4>
+
+<EditForm Model="@currentBook" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label for="title">Title</label>
+        <InputText id="title" class="form-control" @bind-Value="currentBook.Title" />
+    </div>
+    <div class="form-group">
+        <label for="author">Author</label>
+        <InputText id="author" class="form-control" @bind-Value="currentBook.Author" />
+    </div>
+    <div class="form-group">
+        <label for="publicationYear">Publication Year</label>
+        <InputNumber id="publicationYear" class="form-control" @bind-Value="currentBook.PublicationYear" />
+    </div>
+
+    <button type="submit" class="btn btn-success">Save</button>
+</EditForm>
+
+@code {
+    private List<Book>? books;
+    private Book currentBook = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBooks();
+    }
+
+    private async Task LoadBooks()
+    {
+        books = await Http.GetFromJsonAsync<List<Book>>("http://apiservice/books");
+    }
+
+    private void EditBook(Book book)
+    {
+        currentBook = book;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (currentBook.Id == 0)
+        {
+            await Http.PostAsJsonAsync("http://apiservice/books", currentBook);
+        }
+        else
+        {
+            await Http.PutAsJsonAsync($"http://apiservice/books/{currentBook.Id}", currentBook);
+        }
+
+        currentBook = new();
+        await LoadBooks();
+    }
+
+    private async Task DeleteBook(int id)
+    {
+        await Http.DeleteAsync($"http://apiservice/books/{id}");
+        await LoadBooks();
+    }
+}

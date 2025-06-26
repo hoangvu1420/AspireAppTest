@@ -30,6 +30,8 @@ if (app.Environment.IsDevelopment())
 
 app.MapBookEndpoints();
 
+app.MapWeatherEndpoints();
+
 app.MapDefaultEndpoints();
 
 app.Run();
