@@ -6,7 +6,9 @@ var postgres = builder.AddPostgres("postgres").AddDatabase("LMS");
 
 var apiService = builder.AddProject<Projects.AspireAppTest_ApiService>("apiservice")
     .WithReference(postgres)
-    .WithReference(cache);
+    .WaitFor(postgres)
+    .WithReference(cache)
+    .WaitFor(cache);
 
 builder.AddProject<Projects.AspireAppTest_Web>("webfrontend")
     .WithExternalHttpEndpoints()

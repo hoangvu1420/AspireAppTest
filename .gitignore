@@ -120,3 +120,4 @@ node_modules/
 # Yarn
 .yarn/
 .pnp.*
+.azure

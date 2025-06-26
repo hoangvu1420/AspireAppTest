@@ -1,12 +1,19 @@
 @page "/lms"
+@rendermode InteractiveServer
 @using AspireAppTest.Web.Models
-@inject HttpClient Http
+@inject IHttpClientFactory HttpClientFactory
+@inject ILogger<LMS> Logger
+@implements IDisposable
 
 <h3>Library Management System</h3>
 
-@if (books == null)
+@if (loading)
 {
     <p><em>Loading...</em></p>
+}
+else if (books == null || books.Count == 0)
+{
+    <p><em>No books found.</em></p>
 }
 else
 {
@@ -27,8 +34,9 @@ else
                     <td>@book.Author</td>
                     <td>@book.PublicationYear</td>
                     <td>
-                        <button class="btn btn-primary" @onclick="() => EditBook(book)">Edit</button>
-                        <button class="btn btn-danger" @onclick="() => DeleteBook(book.Id)">Delete</button>
+                        <button class="btn btn-primary btn-sm" @onclick="() => EditBook(book)">Edit</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteBook(book.Id)" 
+                                @onclick:preventDefault="true">Delete</button>
                     </td>
                 </tr>
             }
@@ -36,65 +44,189 @@ else
     </table>
 }
 
-<h4>Add/Edit Book</h4>
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger">
+        @errorMessage
+    </div>
+}
+
+<h4>@(isEditing ? "Edit Book" : "Add Book")</h4>
 
 <EditForm Model="@currentBook" OnValidSubmit="HandleSubmit">
     <DataAnnotationsValidator />
     <ValidationSummary />
 
-    <div class="form-group">
+    <div class="form-group mb-3">
         <label for="title">Title</label>
         <InputText id="title" class="form-control" @bind-Value="currentBook.Title" />
     </div>
-    <div class="form-group">
+    <div class="form-group mb-3">
         <label for="author">Author</label>
         <InputText id="author" class="form-control" @bind-Value="currentBook.Author" />
     </div>
-    <div class="form-group">
+    <div class="form-group mb-3">
         <label for="publicationYear">Publication Year</label>
         <InputNumber id="publicationYear" class="form-control" @bind-Value="currentBook.PublicationYear" />
     </div>
 
-    <button type="submit" class="btn btn-success">Save</button>
+    <button type="submit" class="btn btn-success" disabled="@saving">
+        @if (saving)
+        {
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            @(isEditing ? "Updating..." : "Saving...")
+        }
+        else
+        {
+            @(isEditing ? "Update" : "Save")
+        }
+    </button>
+    
+    @if (isEditing)
+    {
+        <button type="button" class="btn btn-secondary ms-2" @onclick="CancelEdit">Cancel</button>
+    }
 </EditForm>
 
 @code {
     private List<Book>? books;
     private Book currentBook = new();
+    private bool loading = true;
+    private bool saving = false;
+    private bool isEditing = false;
+    private string? errorMessage;
+    private HttpClient? httpClient;
 
     protected override async Task OnInitializedAsync()
     {
+        httpClient = HttpClientFactory.CreateClient("ApiService");
         await LoadBooks();
     }
 
     private async Task LoadBooks()
     {
-        books = await Http.GetFromJsonAsync<List<Book>>("http://apiservice/books");
+        try
+        {
+            loading = true;
+            errorMessage = null;
+            books = await httpClient!.GetFromJsonAsync<List<Book>>("books");
+            Logger.LogInformation("Loaded {Count} books", books?.Count ?? 0);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load books");
+            errorMessage = "Failed to load books. Please try again.";
+            books = new List<Book>();
+        }
+        finally
+        {
+            loading = false;
+        }
     }
 
     private void EditBook(Book book)
     {
-        currentBook = book;
+        // Create a copy of the book to avoid modifying the original
+        currentBook = new Book
+        {
+            Id = book.Id,
+            Title = book.Title,
+            Author = book.Author,
+            PublicationYear = book.PublicationYear
+        };
+        isEditing = true;
+        errorMessage = null;
+    }
+
+    private void CancelEdit()
+    {
+        currentBook = new Book();
+        isEditing = false;
+        errorMessage = null;
     }
 
     private async Task HandleSubmit()
     {
-        if (currentBook.Id == 0)
+        try
         {
-            await Http.PostAsJsonAsync("http://apiservice/books", currentBook);
-        }
-        else
-        {
-            await Http.PutAsJsonAsync($"http://apiservice/books/{currentBook.Id}", currentBook);
-        }
+            saving = true;
+            errorMessage = null;
 
-        currentBook = new();
-        await LoadBooks();
+            HttpResponseMessage response;
+            
+            if (currentBook.Id == 0)
+            {
+                // Adding new book
+                response = await httpClient!.PostAsJsonAsync("books", currentBook);
+                Logger.LogInformation("Adding new book: {Title}", currentBook.Title);
+            }
+            else
+            {
+                // Updating existing book
+                response = await httpClient!.PutAsJsonAsync($"books/{currentBook.Id}", currentBook);
+                Logger.LogInformation("Updating book: {Title} (ID: {Id})", currentBook.Title, currentBook.Id);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                currentBook = new Book();
+                isEditing = false;
+                await LoadBooks();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Logger.LogError("API error: {StatusCode} - {Error}", response.StatusCode, error);
+                errorMessage = $"Failed to save book: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to save book");
+            errorMessage = "Failed to save book. Please try again.";
+        }
+        finally
+        {
+            saving = false;
+        }
     }
 
     private async Task DeleteBook(int id)
     {
-        await Http.DeleteAsync($"http://apiservice/books/{id}");
-        await LoadBooks();
+        try
+        {
+            errorMessage = null;
+            var response = await httpClient!.DeleteAsync($"books/{id}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Logger.LogInformation("Deleted book with ID: {Id}", id);
+                
+                // If we're editing the book that was just deleted, clear the form
+                if (currentBook.Id == id)
+                {
+                    currentBook = new Book();
+                    isEditing = false;
+                }
+                
+                await LoadBooks();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Logger.LogError("Failed to delete book: {StatusCode} - {Error}", response.StatusCode, error);
+                errorMessage = $"Failed to delete book: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to delete book with ID: {Id}", id);
+            errorMessage = "Failed to delete book. Please try again.";
+        }
+    }
+
+    public void Dispose()
+    {
+        httpClient?.Dispose();
     }
 }

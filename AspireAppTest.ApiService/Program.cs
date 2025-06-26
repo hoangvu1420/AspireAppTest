@@ -34,4 +34,12 @@ app.MapWeatherEndpoints();
 
 app.MapDefaultEndpoints();
 
+// Initialize database
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<LibraryDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    await DbInitializer.InitializeAsync(context, logger);
+}
+
 app.Run();
