@@ -7,10 +7,10 @@ on:
       - main
 
 env:
-  AZURE_CONTAINER_REGISTRY_NAME: ${{ secrets.ACR_NAME }} # Rename for clarity, though ACR_NAME works
-  AZURE_RESOURCE_GROUP_NAME: ${{ secrets.RESOURCE_GROUP }} # Rename for clarity
-  AZURE_LOCATION: eastus # Or your desired Azure region
-  AZURE_ENVIRONMENT_NAME: aspire-env-${{ github.run_number }} # Unique environment name for azd
+  AZURE_CONTAINER_REGISTRY_NAME: ${{ secrets.ACR_NAME }} 
+  AZURE_RESOURCE_GROUP_NAME: ${{ secrets.RESOURCE_GROUP }} 
+  AZURE_LOCATION: eastasia 
+  AZURE_ENVIRONMENT_NAME: aspire-env-${{ github.run_number }} 
 
 jobs:
   build-and-deploy:
@@ -25,31 +25,23 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Install Azure Developer CLI (azd)
-        run: |
-          curl -sSL https://aka.ms/azd/install.sh | bash
+        uses: Azure/setup-azd@v1
+        with:
+          version: 'latest'
 
       - name: Restore, Build, and Deploy with azd
         run: |
-          # Initialize azd for your project if not already done.
-          # This step is crucial for azd to understand your Aspire app structure.
-          # You might have an azure.yaml in your root already if you ran azd init locally.
-          # If not, azd init will create it. Choose "Use code in the current directory" and confirm Aspire AppHost.
-          azd init --service AspireAppTest.AppHost --template . --no-prompt
-
           # Provision and deploy all services defined in your Aspire AppHost
-          # This command will:
-          #   - Create Azure resources (Container Apps environment, ACR, etc.) if they don't exist.
-          #   - Build container images for your Aspire projects (ApiService, WebFrontend)
-          #   - Push images to the ACR.
-          #   - Deploy Container Apps based on your Aspire configuration.
           azd up --environment ${{ env.AZURE_ENVIRONMENT_NAME }} \
                  --location ${{ env.AZURE_LOCATION }} \
                  --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} \
                  --resource-group ${{ env.AZURE_RESOURCE_GROUP_NAME }} \
                  --force-image-build # Ensures new images are built on each run
-        working-directory: ./AspireAppTest.AppHost # Run azd from your AppHost directory
-        env:
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # You'll need this secret
+        working-directory: ./AspireAppTest.AppHost 
+        env: 
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }} 
+          AZURE_POSTGRES_PASSWORD: ${{ secrets.AZURE_POSTGRES_PASSWORD }}
+          AZURE_POSTGRES_USER: ${{ secrets.AZURE_POSTGRES_USER }}
 
       - name: Get Azure Container App URLs
         run: |
