@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: AspireAppTest.AppHost
+parameters:
+  postgresUser:
+    secureValue: pgadmin123
+  postgresPassword:
+    secureValue: H14204011tuantm*
+services:  
+  app:
+    language: dotnet
+    project: ./AspireAppTest.AppHost.csproj
+    host: containerapp

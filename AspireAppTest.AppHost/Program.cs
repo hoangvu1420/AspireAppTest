@@ -20,8 +20,8 @@ if (isPublishMode)
     var userParam = builder.AddParameter("postgresUser", secret: true);
     var passwordParam = builder.AddParameter("postgresPassword", secret: true);
 
-    postgresBuilder = postgresBuilder
-        .WithPasswordAuthentication(userParam, passwordParam);
+    // postgresBuilder = postgresBuilder
+    //     .WithPasswordAuthentication(userParam, passwordParam);
 }
 else
 {
