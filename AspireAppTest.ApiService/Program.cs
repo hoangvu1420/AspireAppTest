@@ -10,7 +10,7 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddProblemDetails();
 
-builder.AddNpgsqlDbContext<LibraryDbContext>("LMS");
+builder.AddNpgsqlDbContext<LibraryDbContext>("LMSdb");
 
 builder.AddRedisDistributedCache("cache");
 
