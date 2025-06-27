@@ -49,8 +49,8 @@ jobs:
                
       - name: Echo Azure Postgres Credentials
         run: |
-          echo "AZURE_POSTGRES_USER=${{ env.AZURE_POSTGRES_USER }}"
-          echo "AZURE_POSTGRES_PASSWORD=${{ env.AZURE_POSTGRES_PASSWORD }}"
+          echo "AZURE_POSTGRES_USER=${{ secrets.AZURE_POSTGRES_USER }}"
+          echo "AZURE_POSTGRES_PASSWORD=${{ secrets.AZURE_POSTGRES_PASSWORD }}"
 
       - name: Provision Infrastructure
         run: azd provision --no-prompt
