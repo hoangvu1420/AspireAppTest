@@ -23,13 +23,6 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Login to ACR
-        uses: azure/docker-login@v1
-        with:
-          login-server: ${{ env.ACR_NAME }}.azurecr.io
-          username: ${{ secrets.ACR_NAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
-
       - name: Build & push ApiService
         uses: docker/build-push-action@v4
         with:
