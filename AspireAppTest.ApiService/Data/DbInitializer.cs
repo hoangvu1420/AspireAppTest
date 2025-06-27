@@ -5,10 +5,14 @@ namespace AspireAppTest.ApiService.Data;
 
 public static class DbInitializer
 {
-    public static async Task InitializeAsync(LibraryDbContext context, ILogger logger)
+    public static async Task InitializeAsync(LibraryDbContext context, ILogger logger, IConfiguration configuration)
     {
         try
         {
+            // Get and log the connection string
+            var connectionString = configuration.GetConnectionString("LMSdb");
+            logger.LogInformation("LMSdb Connection String: {ConnectionString}", connectionString);
+
             // First, ensure we can connect to the database
             logger.LogInformation("Testing database connection...");
             await context.Database.CanConnectAsync();

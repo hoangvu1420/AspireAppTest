@@ -39,7 +39,8 @@ using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<LibraryDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    await DbInitializer.InitializeAsync(context, logger);
+    var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+    await DbInitializer.InitializeAsync(context, logger, configuration);
 }
 
 app.Run();
