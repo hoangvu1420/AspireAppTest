@@ -46,6 +46,11 @@ jobs:
             --tenant-id "$Env:AZURE_TENANT_ID"
         shell: pwsh
         working-directory: ./AspireAppTest.AppHost
+               
+      - name: Echo Azure Postgres Credentials
+        run: |
+          echo "AZURE_POSTGRES_USER=${{ env.AZURE_POSTGRES_USER }}"
+          echo "AZURE_POSTGRES_PASSWORD=${{ env.AZURE_POSTGRES_PASSWORD }}"
 
       - name: Provision Infrastructure
         run: azd provision --no-prompt
