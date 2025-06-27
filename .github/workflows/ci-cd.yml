@@ -1,5 +1,5 @@
 # .github/workflows/ci-cd.yml
-name: CI/CD to Azure Container Apps
+name: CI/CD to Azure Container Apps (with .NET Aspire and azd)
 
 on:
   push:
@@ -7,9 +7,10 @@ on:
       - main
 
 env:
-  ACR_NAME: ${{ secrets.ACR_NAME }}
-  RESOURCE_GROUP: ${{ secrets.RESOURCE_GROUP }}
-  IMAGE_TAG: ${{ github.sha }}
+  AZURE_CONTAINER_REGISTRY_NAME: ${{ secrets.ACR_NAME }} # Rename for clarity, though ACR_NAME works
+  AZURE_RESOURCE_GROUP_NAME: ${{ secrets.RESOURCE_GROUP }} # Rename for clarity
+  AZURE_LOCATION: eastus # Or your desired Azure region
+  AZURE_ENVIRONMENT_NAME: aspire-env-${{ github.run_number }} # Unique environment name for azd
 
 jobs:
   build-and-deploy:
@@ -23,34 +24,39 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Build & push ApiService
-        uses: docker/build-push-action@v4
-        with:
-          context: ./AspireAppTest.ApiService
-          file: ./AspireAppTest.ApiService/Dockerfile
-          push: true
-          tags: ${{ env.ACR_NAME }}.azurecr.io/apiservice:${{ env.IMAGE_TAG }}
+      - name: Install Azure Developer CLI (azd)
+        run: |
+          curl -sSL https://aka.ms/azd/install.sh | bash
 
-      - name: Build & push WebFrontend
-        uses: docker/build-push-action@v4
-        with:
-          context: ./AspireAppTest.Web
-          file: ./AspireAppTest.Web/Dockerfile
-          push: true
-          tags: ${{ env.ACR_NAME }}.azurecr.io/webfrontend:${{ env.IMAGE_TAG }}
+      - name: Restore, Build, and Deploy with azd
+        run: |
+          # Initialize azd for your project if not already done.
+          # This step is crucial for azd to understand your Aspire app structure.
+          # You might have an azure.yaml in your root already if you ran azd init locally.
+          # If not, azd init will create it. Choose "Use code in the current directory" and confirm Aspire AppHost.
+          azd init --service AspireAppTest.AppHost --template . --no-prompt
 
-      - name: Deploy ApiService to CA
-        uses: azure/container-apps-deploy-action@v1
-        with:
-          acrName: ${{ env.ACR_NAME }}
-          resourceGroup: ${{ env.RESOURCE_GROUP }}
-          containerAppName: apiservice
-          imageToDeploy: ${{ env.ACR_NAME }}.azurecr.io/apiservice:${{ env.IMAGE_TAG }}
+          # Provision and deploy all services defined in your Aspire AppHost
+          # This command will:
+          #   - Create Azure resources (Container Apps environment, ACR, etc.) if they don't exist.
+          #   - Build container images for your Aspire projects (ApiService, WebFrontend)
+          #   - Push images to the ACR.
+          #   - Deploy Container Apps based on your Aspire configuration.
+          azd up --environment ${{ env.AZURE_ENVIRONMENT_NAME }} \
+                 --location ${{ env.AZURE_LOCATION }} \
+                 --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} \
+                 --resource-group ${{ env.AZURE_RESOURCE_GROUP_NAME }} \
+                 --force-image-build # Ensures new images are built on each run
+        working-directory: ./AspireAppTest.AppHost # Run azd from your AppHost directory
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # You'll need this secret
 
-      - name: Deploy WebFrontend to CA
-        uses: azure/container-apps-deploy-action@v1
-        with:
-          acrName: ${{ env.ACR_NAME }}
-          resourceGroup: ${{ env.RESOURCE_GROUP }}
-          containerAppName: webfrontend
-          imageToDeploy: ${{ env.ACR_NAME }}.azurecr.io/webfrontend:${{ env.IMAGE_TAG }}
+      - name: Get Azure Container App URLs
+        run: |
+          azd env get-values --output json > azd-env.json
+          WEB_FRONTEND_URL=$(jq -r '.["WEB_FRONTEND_URL"]' azd-env.json)
+          API_SERVICE_URL=$(jq -r '.["API_SERVICE_URL"]' azd-env.json) # Check the exact name azd uses for this output
+
+          echo "WebFrontend URL: $WEB_FRONTEND_URL"
+          echo "ApiService URL: $API_SERVICE_URL"
+        working-directory: ./AspireAppTest.AppHost
