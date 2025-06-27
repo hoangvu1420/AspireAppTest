@@ -7,10 +7,10 @@ on:
       - main
 
 env:
-  AZURE_CONTAINER_REGISTRY_NAME: ${{ secrets.ACR_NAME }} 
-  AZURE_RESOURCE_GROUP_NAME: ${{ secrets.RESOURCE_GROUP }} 
+  AZURE_CONTAINER_REGISTRY_NAME: ${{ secrets.ACR_NAME }}
+  AZURE_RESOURCE_GROUP_NAME: ${{ secrets.RESOURCE_GROUP }}
   AZURE_LOCATION: eastasia 
-  AZURE_ENVIRONMENT_NAME: aspire-env-${{ github.run_number }} 
+  AZURE_ENVIRONMENT_NAME: aspire-env-${{ github.run_number }}
 
 jobs:
   build-and-deploy:
@@ -29,17 +29,21 @@ jobs:
         with:
           version: 'latest'
 
+      # New Step: Set the AZD environment location
+      - name: Set azd environment location
+        run: |
+          azd env set AZURE_LOCATION ${{ env.AZURE_LOCATION }}
+        working-directory: ./AspireAppTest.AppHost
+
       - name: Restore, Build, and Deploy with azd
         run: |
-          # Provision and deploy all services defined in your Aspire AppHost
           azd up --environment ${{ env.AZURE_ENVIRONMENT_NAME }} \
-                 --location ${{ env.AZURE_LOCATION }} \
                  --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} \
                  --resource-group ${{ env.AZURE_RESOURCE_GROUP_NAME }} \
                  --force-image-build # Ensures new images are built on each run
-        working-directory: ./AspireAppTest.AppHost 
-        env: 
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }} 
+        working-directory: ./AspireAppTest.AppHost
+        env:
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           AZURE_POSTGRES_PASSWORD: ${{ secrets.AZURE_POSTGRES_PASSWORD }}
           AZURE_POSTGRES_USER: ${{ secrets.AZURE_POSTGRES_USER }}
 
