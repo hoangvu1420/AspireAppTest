@@ -45,7 +45,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
   tags: tags
 }
 
-resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-02-02-preview' = {
+resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2025-02-02-preview' = {
   name: 'cae-${resourceToken}'
   location: location
   properties: {
@@ -63,7 +63,7 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-02-02-p
   }
   tags: tags
 
-  resource aspireDashboard 'dotNetComponents' = {
+  resource aspireDashboard 'dotNetComponents@2025-02-02-preview' = {
     name: 'aspire-dashboard'
     properties: {
       componentType: 'AspireDashboard'
