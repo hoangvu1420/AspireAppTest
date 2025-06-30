@@ -3,9 +3,9 @@
 name: aspireapptest-apphost
 parameters:
   postgresUser:
-    secureValue: pgadmin123
+    secureValue: 
   postgresPassword:
-    secureValue: H14204011tuantm*
+    secureValue: 
 services:  
   app:
     language: dotnet
