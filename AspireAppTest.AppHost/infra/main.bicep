@@ -80,7 +80,6 @@ module keyvault 'keyvault/keyvault.module.bicep' = {
   name: 'keyvault'
   scope: rg
   params: {
-    vaultName: '${environmentName}-kv'
     principalId: resources.outputs.MANAGED_IDENTITY_PRINCIPAL_ID
     location: location
   }

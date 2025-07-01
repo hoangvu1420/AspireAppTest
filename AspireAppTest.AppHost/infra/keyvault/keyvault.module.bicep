@@ -1,6 +1,3 @@
-@description('Name of the Key Vault')
-param vaultName string
-
 @description('Location for all resources')
 param location string = resourceGroup().location
 
@@ -8,7 +5,7 @@ param location string = resourceGroup().location
 param principalId string
 
 resource kv 'Microsoft.KeyVault/vaults@2022-07-01' = {
-  name: vaultName
+  name: take('kv-${uniqueString(resourceGroup().id)}', 63)
   location: location
   properties: {
     tenantId: subscription().tenantId
