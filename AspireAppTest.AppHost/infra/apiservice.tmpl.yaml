@@ -21,10 +21,12 @@ properties:
       - server: {{ .Env.AZURE_CONTAINER_REGISTRY_ENDPOINT }}
         identity: {{ .Env.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID }}
     secrets:
-      - name: connectionstrings--lmsdb
-        value: '{{ .Env.POSTGRES_CONNECTIONSTRING }};Database=LMSdb'
-      - name: connectionstrings--cache
-        value: '{{ .Env.CACHE_CONNECTIONSTRING }}'
+      - name: sql-connection
+        keyVaultUrl: '{{ .Env.KEYVAULT_URI }}secrets/LMSdb-Conn'
+        identity: '{{ .Env.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID }}'
+      - name: cache-connection
+        keyVaultUrl: '{{ .Env.KEYVAULT_URI }}secrets/Cache-Conn'
+        identity: '{{ .Env.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID }}'
   template:
     containers:
       - image: {{ .Image }}
@@ -43,9 +45,9 @@ properties:
           - name: OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY
             value: in_memory
           - name: ConnectionStrings__LMSdb
-            secretRef: connectionstrings--lmsdb
+            secretRef: sql-connection
           - name: ConnectionStrings__cache
-            secretRef: connectionstrings--cache
+            secretRef: cache-connection
     scale:
       minReplicas: 1
 tags:
