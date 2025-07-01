@@ -21,8 +21,9 @@ properties:
       - server: {{ .Env.AZURE_CONTAINER_REGISTRY_ENDPOINT }}
         identity: {{ .Env.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID }}
     secrets:
-      - name: connectionstrings--cache
-        value: '{{ .Env.CACHE_CONNECTIONSTRING }}'
+      - name: cache-connection
+        keyVaultUrl: '{{ .Env.KEYVAULT_URI }}secrets/Cache-Conn'
+        identity: '{{ .Env.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID }}'
   template:
     containers:
       - image: {{ .Image }}
@@ -45,7 +46,7 @@ properties:
           - name: services__apiservice__https__0
             value: https://apiservice.{{ .Env.AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN }}
           - name: ConnectionStrings__cache
-            secretRef: connectionstrings--cache
+            secretRef: cache-connection
     scale:
       minReplicas: 1
 tags:

@@ -54,6 +54,7 @@ module cache_roles 'cache-roles/cache-roles.module.bicep' = {
     principalName: resources.outputs.MANAGED_IDENTITY_NAME
   }
 }
+
 module postgres 'postgres/postgres.module.bicep' = {
   name: 'postgres'
   scope: rg
@@ -74,6 +75,26 @@ module postgres_roles 'postgres-roles/postgres-roles.module.bicep' = {
     principalType: 'ServicePrincipal'
   }
 }
+
+module keyvault 'keyvault/keyvault.module.bicep' = {
+  name: 'keyvault'
+  scope: rg
+  params: {
+    vaultName: '${environmentName}-kv'
+    principalId: resources.outputs.MANAGED_IDENTITY_PRINCIPAL_ID
+    location: location
+  }
+}
+module keyvaultSecrets 'keyvault/keyvault-secrets.module.bicep' = {
+  name: 'keyvault-secrets'
+  scope: rg
+  params: {
+    vaultName: keyvault.outputs.keyVaultName
+    postgresConn: postgres.outputs.connectionString
+    cacheConn: cache.outputs.connectionString
+  }
+}
+
 output MANAGED_IDENTITY_CLIENT_ID string = resources.outputs.MANAGED_IDENTITY_CLIENT_ID
 output MANAGED_IDENTITY_NAME string = resources.outputs.MANAGED_IDENTITY_NAME
 output AZURE_LOG_ANALYTICS_WORKSPACE_NAME string = resources.outputs.AZURE_LOG_ANALYTICS_WORKSPACE_NAME
@@ -84,3 +105,5 @@ output AZURE_CONTAINER_APPS_ENVIRONMENT_ID string = resources.outputs.AZURE_CONT
 output AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN string = resources.outputs.AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN
 output CACHE_CONNECTIONSTRING string = cache.outputs.connectionString
 output POSTGRES_CONNECTIONSTRING string = postgres.outputs.connectionString
+output KEYVAULT_URI string = keyvault.outputs.keyVaultUri
+output KEYVAULT_NAME string = keyvault.outputs.keyVaultName
